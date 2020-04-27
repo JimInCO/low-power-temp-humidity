@@ -2,79 +2,62 @@
 Has the schematics and code to create a battery power temperature and humidity sensor.
 Based on the design from the [Home Circuits Blog](https://homecircuits.eu/blog/battery-powered-esp8266-iot-logger/).
 
-## Setup the Raspberry Pi
-Normally the ATtiny13 can be programmed with an Arduino board, 
-however this was unavailable to me at the time so I used a Raspberry Pi to program the ATtiny13.
-Instructions on how to setup the Raspberry Pi to program the ATtiny13 were taken from 
-[Programming the ATtiny85 From Raspberry Pi by prb3333](https://www.instructables.com/id/Programming-the-ATtiny85-from-Raspberry-Pi/).
+## Setup Arduino Uno
+The Arduino IDE can be used to program the ATtiny13.
+I followed the instructions on [this instructable](https://www.instructables.com/id/Updated-Guide-on-How-to-Program-an-Attiny13-or-13a/)
+as they worked better for me than what was on the blog.
 
-### Download and build avrdude
-From the terminal execute the following commands:
+### Connect the Uno and ATtiny
+Here is the breadboard layout.
+![Programmer](images/ATtiny13 Programmer_Schematic.png)
+The Pinout follows this table
 
-1. sudo apt-get install bison automake autoconf flex git gcc
-1. sudo apt-get install gcc-avr binutils-avr avr-libc
-1. cd /tmp
-1. git clone https://github.com/kcuzner/avrdude
-1. cd avrdude/avrdude
-1. ./bootstrap && ./configure 
-1. sudo make install
-
-### Setup SPI on the GPIO
-Use the Raspberry Pi configuration tool to Enable SPI, execute the following command:
- 
-     sudo raspi-config
-
-On my Raspberry Pi 4 this brings up the following screen
-![Pi-Config](images/raspi-config-interface.png)
-Select the Interfacing Options as highlighted in the image
-
-![Pi-SPI](images/raspi-config-spi.png)
-Enable the SPI interface
-
-### Download and build WiringPi for the gpio commands
-Next we want to install WiringPi to setup gpio commands.
-This can be done by executing,
-
-    sudo apt-get install wiringpi
-
-The installation can be tested by executing,
-
-    gpio -v
-
-
-### Electrical Connections 
-The next major step is to build the circuit to connect the Pi to the ATtiny13.
-I used a GPIO Extension board to set this up.
-Below is a screen shot of my setup.
-
-
-Here is the recommended pinout for programming the ATtiny13 with a Raspberry Pi
-
-| Raspberry Pi Pin | ATtiny Pin | Comment         | Resistor |
-|------------------|------------|-----------------|----------|
-| 15               | 1          | GPIO22 to Reset | 1 kΩ     |
-| 17               | 8          | 3.3 V           | None     |
-| 19               | 5          | MOSI            | 1 kΩ     |
-| 21               | 6          | MISO            | 1 kΩ     |
-| 23               | 7          | SCLK            | 1 kΩ     |
-| 25               | 4          | GND             | None     |
+| Arduino Uno Pin  | ATtiny Pin | Type  |
+|------------------|------------| ------|
+| 5v               | Pin 8      | Vcc   |
+| GND              | Pin 4      | GND   |
+| Pin 13           | Pin 7      | SCK   |
+| Pin 12           | Pin 6      | MISO  |
+| Pin 11           | Pin 5      | MOSI  |
+| Pin 10           | Pin 1      | RESET |
 
 This figure shows the pinout of the ATtiny13
 ![ATtiny13 Pinout](images/ATtiny13.jpg)
 
-This figure shows the pinout of the Raspberry Pi 4
-![Raspberry Pinout](images/GPIO-Pinout-Diagram-2.png)
+### Setting Up the Arduino As ISP (In-System Programmer)
+Arduino IDE already contains the program that needs to be loaded to Arduino board, so then it acts the programmer for other boards. 
+Navigate to Files-Examples-ArduinoISP and click on ArduinoISP. 
+Configure Bard type to Arduino UNO, select the correct Serial Port and Upload the sketch as any other sketch to Arduino board.
+At this point Aruduino board is prepared to be programmer for other microcontrolers.
 
-Here is the schematic for how to connect the ATtiny85 and the Raspberry Pi
-![Raspberry Pinout](images/RPi ATtiny13 programmer_schem.png)
+### Downloading the Attiny13(a) Core Files
+MicroCore requires Arduino IDE version 1.6.13 or greater.
 
-### Test Avrdude Connection
-Test avrdude connection to the ATtiny13, we are set up with GPIO pin 22 on the ATtiny reset. 
-We must pull this pin low to program the chip. 
+* Open the Arduino IDE.
+* Open the File > Preferences menu item.
+* Enter the following URL in Additional Boards Manager URLs: 
+https://raw.githubusercontent.com/sleemanj/optiboot/master/dists/package_gogo_diy_attiny_index.json
+* Open the Tools > Board > Boards Manager... menu item.
+* Wait for the platform indexes to finish downloading.
+* Scroll down until you see the DIY ATtiny and click on it.
+* Click Install.
+* After installation is complete close the Boards Manager window.
 
-Execute the following commands:
+### Burning the Bootloader to the Attiny
+Next, we want to add the Bootloader to the ATtiny
+* Go to Tools-Board and select ATtiny13. 
+* After selecting ATtiny13, navigate to Tools-Processor Version and select ATtiny13a. 
+* It is not necessary to change any other settings
+* Change the programmer to be set as "Arduino as ISP"
+* Finally, click the Burn Bootloader button at the bottom of the tools drop-down menu.
 
-    sudo gpio -g mode 22 out
-    sudo gpio -g write 22 0
-    sudo avrdude -p t13 -P /dev/spidev0.0 -c linuxspi -b 10000
-    
+This is a figure of the settings
+![ArduinoIDE](images/ArduinoIDE.png)
+
+
+### Programming the Chip
+This is the last part for setting up the ATtiny. 
+I took the code from the blog and use the Arduino IDE to program the chip.
+The code can be found [here](https://gitlab.com/snippets/30510).
+A few changes to the code have been made and uploaded to this repository [here](attiny/attiny.ino).
+
